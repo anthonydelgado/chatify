@@ -151,13 +151,24 @@ function handleSignOut() {
             }
             // [END_EXCLUDE]
 
+            var disconnectRef = database.ref('presence/' + user.uid);
+            disconnectRef.onDisconnect().remove();
+
+            var disconnectgamerequest = database.ref('gamerequest/' + user.uid);
+            disconnectgamerequest.onDisconnect().remove();
+
 
             firebase.database().ref('.info/connected').on('value', function(connectedSnap) {
                 if (connectedSnap.val() === true) {
                     /* we're connected! */
 
                     database.ref('presence/' + user.uid).set({
-                        dateAdded: firebase.database.ServerValue.TIMESTAMP
+                        username: user.displayName,
+                        email: user.email,
+                        avatar: photoURL,
+                        isAnonymous: isAnonymous,
+                        id: uid,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
                     });
 
                 } else {
@@ -171,7 +182,11 @@ function handleSignOut() {
 
 
 
+
+
             database.ref().on("child_changed", function(childSnapshot, prevChildKey) {
+
+
                 //test output
                 console.log('data changed child_changed');
                 // console.log(childSnapshot.val());
@@ -180,10 +195,10 @@ function handleSignOut() {
                 $.each(childSnapshot.val(), function( index, value ) {
                     // console.log( index );
 
-                    var starCountRef = firebase.database().ref('users/' + index + '');
+                    var starCountRef = firebase.database().ref('presence/' + index + '');
                     starCountRef.on('value', function(snapshot) {
                         console.log(snapshot.val().email);
-                        var item = '<li class="collection-item"><div>' + snapshot.val().email + '<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>';
+                        var item = '<li class="collection-item play" data-to="' + snapshot.val().id + '" data-from="' + user.uid + '"><div>' + snapshot.val().email + '<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>';
                         $('#onlinelist').append(item);
                     });
 
@@ -195,7 +210,7 @@ function handleSignOut() {
 
             });
 
-            
+
         } else {
             // User is signed out.
             console.log('You are signed out');
@@ -210,7 +225,17 @@ function handleSignOut() {
         document.getElementById('chatify-sign-up').addEventListener('click', handleSignUp, false);
         document.getElementById('chatify-logout').addEventListener('click', handleSignOut, false);
 
+        $(document).on("click",".play",function() {
+            var to = $(this).data('to');
+            var from = $(this).data('from');
 
+            database.ref('gamerequest/' + to).set({
+                to: to,
+                from: from,
+                lastActive: firebase.database.ServerValue.TIMESTAMP
+            });
+
+        });
 
 
 
